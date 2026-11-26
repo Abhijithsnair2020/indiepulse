@@ -56,6 +56,34 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.caption('Steam Store snapshot (January 2025) · Experimental indicators, not forecasts')
 
+# Search & benchmark a specific game (global catalog, independent of niche filters)
+st.markdown("### 🔍 Search & Benchmark a Specific Game")
+st.caption("Look up a game in the catalog and compare its listed USD price with the dataset median.")
+search_names=df['name'].dropna().astype(str).sort_values().unique().tolist()
+benchmark_choice=st.selectbox("Search for a game", options=["— Select a game —"]+search_names, index=0, placeholder="Type a game name...")
+if benchmark_choice != "— Select a game —":
+    game_rows=df[df['name'].astype(str)==benchmark_choice]
+    game=game_rows.iloc[0]
+    overall_median_price=df['price_usd_est'].dropna().median() if df['price_usd_est'].notna().any() else np.nan
+    game_price=game['price_usd_est']
+    if pd.notna(game_price) and pd.notna(overall_median_price):
+        price_comparison=f"${game_price:.2f} vs ${overall_median_price:.2f}"
+        price_note="Game price vs overall dataset median (USD)"
+    else:
+        price_comparison="N/A"
+        price_note="USD comparison unavailable for this game"
+    reviews_value=int(game['sample_review_count']) if pd.notna(game['sample_review_count']) else 0
+    positive_value=float(game['sample_positive_pct']) if pd.notna(game['sample_positive_pct']) else 0.0
+    tags_value=str(game['genres']) if pd.notna(game['genres']) and str(game['genres']).strip() else "No genre/tag data available"
+    b1,b2,b3=st.columns(3)
+    with b1:
+        st.markdown(f'<div class="insight"><div class="insight-title">Price benchmark</div><div class="insight-value">{price_comparison}</div><div class="insight-note">{price_note}</div></div>',unsafe_allow_html=True)
+    with b2:
+        st.markdown(f'<div class="insight"><div class="insight-title">Reviews & positive share</div><div class="insight-value">{reviews_value:,} reviews · {positive_value:.1f}% positive</div><div class="insight-note">Review sample represented in this dataset</div></div>',unsafe_allow_html=True)
+    with b3:
+        st.markdown(f'<div class="insight"><div class="insight-title">Genres / tags</div><div class="insight-value">{tags_value}</div><div class="insight-note">Dataset genre labels</div></div>',unsafe_allow_html=True)
+
+
 with st.sidebar:
     st.header('🔎 Explore')
     use_indie=st.checkbox('Restrict to games with a detected Indie genre label',value=True)
